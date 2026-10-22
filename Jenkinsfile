@@ -58,7 +58,11 @@ pipeline {
                     if (isUnix()) {
                         sh 'docker compose build'
                     } else {
-                        bat 'docker compose build'
+                        bat '''
+                            @echo off
+                            set "PATH=C:\\Users\\DHEERA SHARMA\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin;C:\\Program Files\\Docker\\Docker\\resources\\bin;%PATH%"
+                            docker compose build
+                        '''
                     }
                 }
             }
