@@ -58,11 +58,9 @@ pipeline {
                     if (isUnix()) {
                         sh 'docker compose build'
                     } else {
-                        bat '''
-                            @echo off
-                            set "PATH=C:\\Users\\DHEERA SHARMA\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin;C:\\Program Files\\Docker\\Docker\\resources\\bin;%PATH%"
-                            docker compose build
-                        '''
+                        withEnv(['PATH+DOCKER=C:\\Users\\DHEERA SHARMA\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin']) {
+                            bat 'docker compose build'
+                        }
                     }
                 }
             }
