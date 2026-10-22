@@ -21,9 +21,17 @@ pipeline {
         stage('Backend Tests') {
             steps {
                 dir('backend') {
-                    sh 'python -m pip install --upgrade pip'
-                    sh 'pip install -r requirements.txt'
-                    sh 'python -m pytest tests/ -v --tb=short'
+                    script {
+                        if (isUnix()) {
+                            sh 'python -m pip install --upgrade pip'
+                            sh 'pip install -r requirements.txt'
+                            sh 'python -m pytest tests/ -v --tb=short'
+                        } else {
+                            bat 'python -m pip install --upgrade pip'
+                            bat 'pip install -r requirements.txt'
+                            bat 'python -m pytest tests/ -v --tb=short'
+                        }
+                    }
                 }
             }
         }
@@ -31,15 +39,28 @@ pipeline {
         stage('Frontend Build') {
             steps {
                 dir('frontend') {
-                    sh 'npm ci'
-                    sh 'npm run build'
+                    script {
+                        if (isUnix()) {
+                            sh 'npm ci'
+                            sh 'npm run build'
+                        } else {
+                            bat 'npm ci'
+                            bat 'npm run build'
+                        }
+                    }
                 }
             }
         }
 
         stage('Docker Build') {
             steps {
-                sh 'docker compose build'
+                script {
+                    if (isUnix()) {
+                        sh 'docker compose build'
+                    } else {
+                        bat 'docker compose build'
+                    }
+                }
             }
         }
     }
