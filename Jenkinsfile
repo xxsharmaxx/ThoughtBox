@@ -24,11 +24,11 @@ pipeline {
                     script {
                         if (isUnix()) {
                             sh 'python -m pip install --upgrade pip'
-                            sh 'pip install -r requirements.txt'
+                            sh 'python -m pip install -r requirements.txt'
                             sh 'python -m pytest tests/ -v --tb=short'
                         } else {
                             bat 'python -m pip install --upgrade pip'
-                            bat 'pip install -r requirements.txt'
+                            bat 'python -m pip install -r requirements.txt'
                             bat 'python -m pytest tests/ -v --tb=short'
                         }
                     }
