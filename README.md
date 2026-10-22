@@ -1,605 +1,451 @@
 # 💭 ThoughtBox — Anonymous Campus Thoughts Platform
 
-> A platform where students and teachers can anonymously share thoughts, suggestions, appreciation, and campus feedback.
-
-Built as an MCA mini-project demonstrating **Frontend & Backend Development**, **Docker & Containerization**, and **DevOps & CI/CD**.
+> A production-ready, containerized web platform for students and faculty to anonymously share thoughts, suggestions, appreciation, and feedback.
+> Built as an MCA mini-project demonstrating **Full-Stack Development**, **Docker & Containerization**, **DevOps & CI/CD Pipelines**, and **Relational Database Management**.
 
 ---
 
 ## 📋 Table of Contents
 
-- [Project Overview](#-project-overview)
-- [Technology Stack](#-technology-stack)
-- [Architecture](#-architecture)
-- [Features](#-features)
-- [Project Structure](#-project-structure)
-- [Prerequisites](#-prerequisites)
-- [Quick Start (Windows PowerShell)](#-quick-start-windows-powershell)
-- [Environment Configuration](#-environment-configuration)
-- [Build & Run with Docker Compose](#-build--run-with-docker-compose)
-- [Using the Application](#-using-the-application)
-- [API Reference](#-api-reference)
-- [Testing the API](#-testing-the-api)
-- [Important Docker Commands](#-important-docker-commands)
-- [Verify PostgreSQL Persistence](#-verify-postgresql-persistence)
-- [GitHub Actions CI/CD](#-github-actions-cicd)
-- [Anonymity & Safety](#-anonymity--safety)
-- [Limitations & Future Enhancements](#-limitations--future-enhancements)
-- [Screenshots](#-screenshots)
-- [Viva Questions & Answers](#-viva-questions--answers)
+1. [Project Overview & What We Do](#-project-overview--what-we-do)
+2. [End-to-End System Workflow](#-end-to-end-system-workflow)
+3. [Tools & Technologies Used (Detailed Breakdown)](#-tools--technologies-used-detailed-breakdown)
+4. [Architecture Diagram](#-architecture-diagram)
+5. [Docker Concepts Used (Deep Dive for Viva)](#-docker-concepts-used-deep-dive-for-viva)
+6. [DevOps Concepts Used (Deep Dive for Viva)](#-devops-concepts-used-deep-dive-for-viva)
+7. [CI/CD Pipelines (GitHub Actions & Jenkins)](#-cicd-pipelines-github-actions--jenkins)
+8. [Quick Start & Running the Project](#-quick-start--running-the-project)
+9. [API Reference](#-api-reference)
+10. [Database Schema & Persistence](#-database-schema--persistence)
+11. [Master Viva Questions & Answers (Cheat Sheet)](#-master-viva-questions--answers-cheat-sheet)
 
 ---
 
-## 🎯 Project Overview
+## 🎯 Project Overview & What We Do
 
-**ThoughtBox** is an anonymous campus community platform that allows students and faculty to:
+### 1. The Core Problem
+On college campuses, students often hesitate to share candid feedback, creative suggestions, or genuine appreciation due to social anxiety, peer pressure, or fear of academic retribution. Traditional feedback boxes are slow, unmoderated, and lack peer engagement.
 
-- Share thoughts, suggestions, and appreciation anonymously
-- Browse and filter community thoughts by category
-- Like thoughts to show support
-- Report inappropriate content
-- Moderate posts through a protected admin interface
-
-The project covers three core areas:
-1. **Full-Stack Development** — React (TypeScript) frontend + FastAPI (Python) backend + PostgreSQL
-2. **Containerization** — Docker and Docker Compose for local deployment
-3. **DevOps & CI/CD** — GitHub Actions for automated testing, optional Jenkinsfile
+### 2. Our Solution: ThoughtBox
+ThoughtBox provides a secure, anonymous, real-time campus forum where:
+- **Students & Teachers post thoughts anonymously**: No login, no names, no student IDs, and no raw IP logging.
+- **Categorization**: Thoughts are categorized under *Academics, Suggestions, Appreciation, Campus Life,* or *Other*.
+- **Community Interaction**: Users can like thoughts (with client-side duplicate prevention) and view real-time vote tallies.
+- **Content Moderation & Safety**: Users can flag/report inappropriate content.
+- **Protected Moderator Panel**: Campus moderators log in via a secure secret key to review reported posts, approve/hide thoughts, or delete offensive submissions.
 
 ---
 
-## 🛠 Technology Stack
-
-| Layer        | Technology                    |
-|--------------|-------------------------------|
-| Frontend     | React 19, Vite, TypeScript    |
-| Styling      | Vanilla CSS (responsive)      |
-| Backend      | Python 3.11, FastAPI          |
-| Database     | PostgreSQL 16                 |
-| Containers   | Docker, Docker Compose        |
-| CI/CD        | GitHub Actions                |
-| Web Server   | Nginx (production frontend)   |
-| Version Control | Git, GitHub               |
-
----
-
-## 🏗 Architecture
+## 🔄 End-to-End System Workflow
 
 ```
-┌─────────────────┐     HTTP     ┌─────────────────┐     SQL     ┌──────────────┐
-│                 │   (port 80)  │                 │  (port 5432) │              │
-│   Frontend      │◄────────────►│   Backend       │◄────────────►│  PostgreSQL  │
-│   (React/Nginx) │              │   (FastAPI)     │              │              │
-│   Port 3000     │              │   Port 8000     │              │   Port 5432  │
-│                 │              │                 │              │              │
-└─────────────────┘              └─────────────────┘              └──────────────┘
-     Container                        Container                      Container
-                                                                   + Named Volume
-```
-
-- **Frontend container**: Nginx serves the production React build and proxies nothing — the browser calls the backend directly.
-- **Backend container**: FastAPI handles REST API requests. Waits for PostgreSQL health check before starting.
-- **Database container**: PostgreSQL with a named volume (`pgdata`) for data persistence across container restarts.
-
----
-
-## ✨ Features
-
-| Feature                | Description                                              |
-|------------------------|----------------------------------------------------------|
-| 📝 Thought Feed        | View approved thoughts, newest first                     |
-| ➕ Create Thought       | Submit a thought with category selection                 |
-| 🏷️ Categories          | Academics, Suggestions, Appreciation, Campus Life, Other |
-| 🔒 Anonymous Posting   | No names, emails, or IDs collected or displayed          |
-| ❤️ Likes               | Like thoughts with duplicate prevention per session      |
-| 🚩 Report              | Report inappropriate content with optional reason        |
-| 🛡️ Moderation Panel   | Protected interface to review reports and hide posts     |
-| 🔍 Category Filtering  | Filter feed by category                                  |
-| 📱 Responsive Design   | Works on desktop and mobile                              |
-| ⏳ Loading States       | Spinners, empty states, error messages                   |
-| 🔐 Rate Limiting       | In-memory rate limiting to prevent abuse                 |
-| 🐳 Full Docker Setup   | One-command deployment with Docker Compose               |
-| ✅ CI/CD Pipeline       | Automated tests on push/PR via GitHub Actions            |
-
----
-
-## 📁 Project Structure
-
-```
-ThoughtBox/
-├── frontend/                   # React + Vite + TypeScript
-│   ├── src/
-│   │   ├── components/
-│   │   │   ├── Header.tsx
-│   │   │   ├── ThoughtFeed.tsx
-│   │   │   ├── ThoughtCard.tsx
-│   │   │   ├── CreateThoughtModal.tsx
-│   │   │   └── ModPanel.tsx
-│   │   ├── api.ts              # API client layer
-│   │   ├── App.tsx             # Root component
-│   │   ├── main.tsx            # React entry point
-│   │   ├── index.css           # Global styles
-│   │   └── vite-env.d.ts       # Vite type declarations
-│   ├── Dockerfile              # Multi-stage: Node build → Nginx serve
-│   ├── nginx.conf              # SPA routing configuration
-│   ├── package.json
-│   ├── tsconfig.json
-│   └── vite.config.ts
-│
-├── backend/                    # Python FastAPI
-│   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py             # API endpoints
-│   │   ├── models.py           # SQLAlchemy models
-│   │   ├── schemas.py          # Pydantic schemas
-│   │   ├── database.py         # Database connection
-│   │   └── config.py           # Environment settings
-│   ├── tests/
-│   │   ├── __init__.py
-│   │   └── test_api.py         # API tests
-│   ├── Dockerfile
-│   └── requirements.txt
-│
-├── .github/
-│   └── workflows/
-│       └── ci.yml              # GitHub Actions workflow
-│
-├── docs/
-│   └── screenshots/
-│       └── README.md           # Screenshot capture guide
-│
-├── compose.yaml                # Docker Compose configuration
-├── .env.example                # Environment template
-├── .gitignore
-├── Jenkinsfile                 # Optional Jenkins pipeline
-└── README.md                   # This file
+[Student / User Browser]
+       │
+       │ 1. HTTP Request (e.g. GET /api/thoughts or POST /api/thoughts)
+       ▼
+[Nginx Web Server] (Port 3000 -> Container Port 80)
+       │ - Serves optimized static React/TypeScript assets
+       │ - Handles SPA fallback routing (try_files)
+       ▼
+[FastAPI Backend] (Port 8000 -> Container Port 8000)
+       │ - CORS Middleware validates origin
+       │ - SlowAPI Rate Limiter checks IP frequency (anti-spam)
+       │ - Pydantic validates payload schemas
+       │ - Dependency Injection yields SQLAlchemy DB session
+       ▼
+[PostgreSQL Database] (Port 5432)
+       │ - Stores relational records (thoughts, reports)
+       │ - Data persisted permanently in Docker named volume 'pgdata'
+       ▼
+[FastAPI serializes response] ──► [React renders UI state]
 ```
 
 ---
 
-## ⚙️ Prerequisites
+## 🛠 Tools & Technologies Used (Detailed Breakdown)
 
-Ensure these are installed on your Windows machine:
-
-- **Docker Desktop** (v4.0+) — [Download](https://www.docker.com/products/docker-desktop/)
-- **Git** — [Download](https://git-scm.com/downloads)
-- **Node.js** (v18+, only for local development) — [Download](https://nodejs.org/)
-- **Python** (v3.10+, only for local development) — [Download](https://python.org/)
+| Component | Tool / Technology | Version | Purpose in this Project |
+| :--- | :--- | :--- | :--- |
+| **Frontend Framework** | **React** | 19.x | Declarative, component-based user interface. |
+| **Frontend Language** | **TypeScript** | 5.x | Compile-time type safety, interface definitions, bug reduction. |
+| **Frontend Build Tool** | **Vite** | 8.x | Ultra-fast native ES Module dev server and production bundler. |
+| **Frontend Styling** | **Vanilla CSS** | CSS3 | Responsive design, CSS variables, dark/light styling, glassmorphism. |
+| **Web Server** | **Nginx** | Alpine | Production web server serving static bundle and handling client-side SPA routing. |
+| **Backend Framework** | **FastAPI** | 0.115+ | High-performance asynchronous REST API framework in Python. |
+| **Backend Language** | **Python** | 3.11 | Modern Python runtime with native typing and async support. |
+| **ASGI Server** | **Uvicorn** | 0.34+ | Lightning-fast ASGI web server running FastAPI. |
+| **ORM** | **SQLAlchemy** | 2.0+ | Object Relational Mapper for database interaction via Python objects. |
+| **Data Validation** | **Pydantic** | 2.10+ | Request and response schema validation and serialization. |
+| **Rate Limiter** | **SlowAPI** | 0.1.9+ | In-memory IP rate limiting to prevent spam and DoS attacks. |
+| **Database** | **PostgreSQL** | 16-alpine | Production-grade relational database for ACID-compliant storage. |
+| **Unit Testing** | **Pytest** | 8.3+ | Automated backend testing using in-memory SQLite for test isolation. |
+| **Container Engine** | **Docker** | 29.x | OS-level virtualization to containerize services. |
+| **Orchestration** | **Docker Compose** | v2 / v5 | Multi-container configuration, networking, volumes, health checks. |
+| **CI Automation** | **GitHub Actions** | v4/v5 | Cloud CI pipeline triggering on every Git push and pull request. |
+| **DevOps Pipeline** | **Jenkins** | Declarative | Alternative enterprise CI/CD pipeline definition (`Jenkinsfile`). |
+| **Version Control** | **Git & GitHub** | - | Distributed source code tracking and pull-request collaboration. |
 
 ---
 
-## 🚀 Quick Start (Windows PowerShell)
+## 🏗 Architecture Diagram
 
-Open PowerShell and run these commands:
+```
+                             Docker Bridge Network: 'thoughtbox-net'
+                      ┌─────────────────────────────────────────────────────────┐
+                      │                                                         │
+[Host: Port 3000] ───►│ [frontend:80]                                           │
+                      │  - Nginx (Alpine)                                       │
+                      │  - Static React SPA files                               │
+                      │                                                         │
+[Host: Port 8000] ───►│ [backend:8000]                                          │
+                      │  - FastAPI / Python 3.11                                │
+                      │  - Uvicorn server                                       │
+                      │  - SlowAPI Rate Limiting                                │
+                      │  - Depends on DB (healthy)                              │
+                      │          │                                              │
+                      │          │ Internal DNS: db:5432                        │
+                      │          ▼                                              │
+[Host: Port 5432] ───►│ [db:5432]                                               │
+                      │  - PostgreSQL 16 Alpine                                 │
+                      │  - Mounts Volume: pgdata ──► /var/lib/postgresql/data   │
+                      │  - Health Check: pg_isready                             │
+                      │                                                         │
+                      └─────────────────────────────────────────────────────────┘
+```
 
+---
+
+## 🐳 Docker Concepts Used (Deep Dive for Viva)
+
+### 1. Containers vs. Virtual Machines
+* **Virtual Machines (VMs)**: Include a full Guest OS on top of a hypervisor. Heavyweight (gigabytes), slow startup (minutes).
+* **Docker Containers**: Share the host Linux kernel and isolate processes using Linux kernel **namespaces** (PID, NET, MNT, IPC, UTS) and **cgroups** (CPU, RAM limits). Lightweight (megabytes), sub-second startup.
+
+### 2. Multi-Stage Docker Builds (Used in `frontend/Dockerfile`)
+* **Problem**: Building React requires Node.js, `npm`, devDependencies, and build tools (~1 GB image). However, running a React app in production only needs plain HTML/CSS/JS files!
+* **Solution**: Multi-stage build:
+  ```dockerfile
+  # Stage 1: Build the assets using Node
+  FROM node:20-alpine AS build
+  WORKDIR /app
+  COPY package*.json ./
+  RUN npm ci
+  COPY . .
+  RUN npm run build
+
+  # Stage 2: Serve using lightweight Nginx
+  FROM nginx:alpine
+  COPY --from=build /app/dist /usr/share/nginx/html
+  COPY nginx.conf /etc/nginx/conf.d/default.conf
+  EXPOSE 80
+  CMD ["nginx", "-g", "daemon off;"]
+  ```
+* **Viva Benefit**: Decreases image size from **~1.2 GB to ~25 MB**, eliminates Node runtime vulnerabilities in production, and speeds up deployment.
+
+### 3. Docker Layer Caching Optimization
+* Docker caches each instruction line. If files haven't changed, Docker reuses the cached layer.
+* In both `backend/Dockerfile` and `frontend/Dockerfile`, we deliberately copy dependency files first:
+  ```dockerfile
+  COPY requirements.txt .
+  RUN pip install --no-cache-dir -r requirements.txt
+  COPY . .
+  ```
+* If you edit backend Python code, Docker does **not** re-install Python dependencies; it starts from line 10, completing the build in seconds.
+
+### 4. Docker Compose Orchestration (`compose.yaml`)
+Instead of typing separate `docker run` commands with dozens of arguments, Docker Compose coordinates:
+* **Service definitions**: `db`, `backend`, `frontend`.
+* **Port mappings**: `3000:80`, `8000:8000`, `5432:5432`.
+* **Restart policies**: `restart: unless-stopped`.
+* **Volume management**: Persistent storage binding.
+
+### 5. Docker Networking & Service Discovery
+* Docker Compose creates an automatic isolated bridge network.
+* Services find each other by **service name** via Docker's embedded DNS server.
+* The backend connects to PostgreSQL using `db:5432`, **not** an IP address or `localhost`.
+
+### 6. Container Health Checks & Startup Dependencies
+* **Race Condition Problem**: If the backend starts before PostgreSQL is ready to accept connections, the backend crashes.
+* **Our Solution**:
+  1. PostgreSQL health check:
+     ```yaml
+     healthcheck:
+       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-thoughtbox}"]
+       interval: 5s
+       retries: 5
+     ```
+  2. Backend dependency condition:
+     ```yaml
+     depends_on:
+       db:
+         condition: service_healthy
+     ```
+  3. Backend health check:
+     ```yaml
+     healthcheck:
+       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health')"]
+     ```
+
+### 7. Docker Volumes (Data Persistence)
+* Containers have ephemeral filesystems; deleting a container deletes its files.
+* We define a **named volume** (`pgdata`):
+  ```yaml
+  volumes:
+    - pgdata:/var/lib/postgresql/data
+  ```
+* Even if you destroy the `db` container (`docker compose down`), your thoughts and database records remain intact on the host storage. Only `docker compose down -v` removes the volume.
+
+### 8. Context Optimization via `.dockerignore`
+* Prevents transmitting heavy, temporary, or sensitive folders into the Docker daemon context:
+  * Backend ignores: `.venv`, `__pycache__`, `.pytest_cache`, `.env`
+  * Frontend ignores: `node_modules`, `dist`, `.git`
+
+---
+
+## ⚙️ DevOps Concepts Used (Deep Dive for Viva)
+
+### 1. Continuous Integration (CI)
+* Developers frequently commit code to a shared repository.
+* On every commit or pull request, an automated CI runner triggers builds and unit tests to catch defects immediately ("fail early").
+
+### 2. Shift-Left Testing
+* Testing is moved to the earliest stage of the development lifecycle.
+* Before any container is packaged or deployed, automated tests execute:
+  * Backend API tests check HTTP status codes, validation errors, and rate limits.
+  * In-memory SQLite (`sqlite://`) is used during testing so tests run instantly without needing an external database.
+
+### 3. Infrastructure as Code (IaC) & Configuration as Code
+* Environments are declared in version-controlled configuration files (`compose.yaml`, `Dockerfile`, `nginx.conf`, `Jenkinsfile`) rather than configured manually on servers.
+* Guarantees repeatability, audibility, and zero human configuration drift.
+
+### 4. Environment Parity (Eliminating "It works on my machine")
+* Eliminates differences between Windows/Mac developer laptops, CI test runners, and production servers by containerizing all dependencies.
+
+### 5. Secrets Management & The 12-Factor App
+* Following the **12-Factor App methodology (Config in environment)**:
+  * Passwords (`POSTGRES_PASSWORD`) and moderator keys (`MODERATOR_SECRET`) are never hardcoded in source code.
+  * Injected via environment variables and `.env` files.
+  * `.env` is listed in `.gitignore` to prevent sensitive credentials from leaking to GitHub.
+
+### 6. Reverse Proxy & SPA Client-Side Routing
+* Nginx acts as a high-performance web server.
+* The `nginx.conf` includes:
+  ```nginx
+  location / {
+      try_files $uri $uri/ /index.html;
+  }
+  ```
+* This ensures single-page application (SPA) routes do not return 404 Not Found when directly refreshed in the browser.
+
+### 7. Observability & Self-Healing
+* Health check endpoints (`/api/health`) query both the web service and the database connection:
+  ```json
+  {"status": "ok", "database": "connected"}
+  ```
+* Orchestrators like Docker or Kubernetes use this endpoint to automatically restart unresponsive containers.
+
+---
+
+## 🔄 CI/CD Pipelines (GitHub Actions & Jenkins)
+
+### 1. GitHub Actions Pipeline (`.github/workflows/ci.yml`)
+
+Runs on every `push` and `pull_request` to `main`:
+
+```
+Git Push to GitHub
+       │
+       ├─────────────────────────────────┐
+       ▼                                 ▼
+[Job 1: Backend Tests]           [Job 2: Frontend Build]
+ - Ubuntu Runner                  - Ubuntu Runner
+ - Set up Python 3.11             - Set up Node.js 20
+ - Install requirements.txt       - npm ci (clean install)
+ - Run pytest against SQLite      - npm run build (Vite compilation)
+       │                                 │
+       └────────────────┬────────────────┘
+                        ▼
+             CI Status: PASSED / FAILED
+```
+
+### 2. Jenkins Pipeline (`Jenkinsfile`)
+
+Declarative 4-stage pipeline for automated builds:
+1. **Stage 1: Checkout** — Clones latest commit from Git repository.
+2. **Stage 2: Backend Tests** — Installs dependencies and runs `pytest tests/ -v`.
+3. **Stage 3: Frontend Build** — Runs `npm ci` and compiles TypeScript bundle.
+4. **Stage 4: Docker Build** — Executes `docker compose build` to verify container artifacts build cleanly.
+5. **Post actions** — Emits pipeline success or failure notifications.
+
+---
+
+## 🚀 Quick Start & Running the Project
+
+### Prerequisites
+* [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+* [Git](https://git-scm.com/) installed.
+
+### 1. One-Command Start (Recommended)
+From the project root:
 ```powershell
-# 1. Navigate to the project
-cd "C:\Users\DHEERA SHARMA\Desktop\Build-Box"
-
-# 2. Create .env from the example template
-Copy-Item .env.example .env
-
-# 3. (Optional) Edit .env to set a custom moderator secret
-# notepad .env
-
-# 4. Build and start all services
 docker compose up -d --build
+```
 
-# 5. Wait for services to be healthy (about 30-60 seconds)
+### 2. Accessing the Services
+| Service | URL | Notes |
+| :--- | :--- | :--- |
+| **Frontend Application** | [http://localhost:3000](http://localhost:3000) | ThoughtBox interactive React UI |
+| **Backend API Docs (Swagger)** | [http://localhost:8000/docs](http://localhost:8000/docs) | Interactive Swagger UI |
+| **Backend Health Check** | [http://localhost:8000/api/health](http://localhost:8000/api/health) | Returns DB & API health |
+| **PostgreSQL Database** | `localhost:5432` | User: `thoughtbox`, DB: `thoughtbox` |
+
+### 3. Essential Docker Management Commands
+```powershell
+# Check status of running containers
 docker compose ps
 
-# 6. Open in browser
-Start-Process "http://localhost:3000"
-
-# 7. View the API docs
-Start-Process "http://localhost:8000/docs"
-```
-
----
-
-## 🔧 Environment Configuration
-
-Copy `.env.example` to `.env`:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Edit `.env` to customize:
-
-```env
-# PostgreSQL credentials
-POSTGRES_USER=thoughtbox
-POSTGRES_PASSWORD=thoughtbox        # Change in production!
-POSTGRES_DB=thoughtbox
-
-# Moderator secret — used to access the moderation panel
-MODERATOR_SECRET=change-me-in-production    # CHANGE THIS!
-
-# Frontend API URL — how the browser reaches the backend
-VITE_API_URL=http://localhost:8000
-```
-
-> ⚠️ **Never commit `.env` to GitHub.** The `.gitignore` already excludes it.
-
----
-
-## 🐳 Build & Run with Docker Compose
-
-```powershell
-# Build and start all containers
-docker compose up -d --build
-
-# Check status (wait until all show "healthy" or "running")
-docker compose ps
-
-# View logs
+# View real-time logs from all services
 docker compose logs -f
 
-# View specific service logs
+# View backend logs specifically
 docker compose logs -f backend
-docker compose logs -f frontend
-docker compose logs -f db
 
-# Stop all services
+# Stop all services (preserves database data)
 docker compose down
 
-# Stop and remove volumes (deletes all data!)
+# Stop and wipe database data (clean reset)
 docker compose down -v
 ```
-
-### Service URLs
-
-| Service  | URL                           |
-|----------|-------------------------------|
-| Frontend | http://localhost:3000          |
-| Backend  | http://localhost:8000          |
-| API Docs | http://localhost:8000/docs     |
-| Database | localhost:5432 (internal)      |
-
----
-
-## 🖥 Using the Application
-
-### Posting a Thought
-1. Open http://localhost:3000
-2. Click the **"Share a Thought"** button (bottom-right)
-3. Write your thought (3–1000 characters)
-4. Select a category
-5. Click **"Post Anonymously"**
-
-### Browsing & Filtering
-- Use the **category chips** at the top to filter by category
-- Click **"All"** to see all thoughts
-
-### Liking & Reporting
-- Click the **❤️ heart** button to like a thought
-- Click the **🚩 flag** button to report inappropriate content
-
-### Moderation
-1. Click **"Moderate"** in the header
-2. Enter the moderator secret (from your `.env` file)
-3. View all thoughts and reports
-4. **Hide/Unhide** posts as needed
 
 ---
 
 ## 📡 API Reference
 
-### Public Endpoints
+All API routes are prefixed with `/api`.
 
-| Method | Endpoint                         | Description                    |
-|--------|----------------------------------|--------------------------------|
-| GET    | `/api/health`                    | Health check                   |
-| GET    | `/api/thoughts`                  | List approved thoughts         |
-| GET    | `/api/thoughts?category=X`       | Filter by category             |
-| POST   | `/api/thoughts`                  | Create a new thought           |
-| POST   | `/api/thoughts/{id}/like`        | Like a thought                 |
-| POST   | `/api/thoughts/{id}/report`      | Report a thought               |
-
-### Moderator Endpoints (require `X-Moderator-Secret` header)
-
-| Method | Endpoint                          | Description                    |
-|--------|-----------------------------------|--------------------------------|
-| GET    | `/api/mod/thoughts`               | List all thoughts (incl. hidden) |
-| GET    | `/api/mod/reports`                | List all reports               |
-| POST   | `/api/mod/thoughts/{id}/hide`     | Hide a thought                 |
-| POST   | `/api/mod/thoughts/{id}/unhide`   | Unhide a thought               |
+| Method | Endpoint | Description | Protected? |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/health` | Service and DB healthcheck | No |
+| `GET` | `/api/thoughts` | List approved thoughts (optional `?category=`) | No |
+| `POST` | `/api/thoughts` | Create a new thought (Rate-limited: 5/min) | No |
+| `POST` | `/api/thoughts/{id}/like` | Increment like count (Rate-limited: 30/min) | No |
+| `POST` | `/api/thoughts/{id}/report` | Report a thought (Rate-limited: 10/min) | No |
+| `POST` | `/api/moderator/login` | Validate moderator key | Header `X-Moderator-Secret` |
+| `GET` | `/api/moderator/thoughts` | List all thoughts including flagged | Header `X-Moderator-Secret` |
+| `PATCH` | `/api/moderator/thoughts/{id}` | Toggle thought visibility (`is_approved`) | Header `X-Moderator-Secret` |
+| `DELETE` | `/api/moderator/thoughts/{id}` | Permanently delete a thought | Header `X-Moderator-Secret` |
 
 ---
 
-## 🧪 Testing the API
+## 🗄 Database Schema & Persistence
 
-### Using PowerShell (Invoke-RestMethod)
+### 1. `thoughts` Table
+- `id` (Integer, Primary Key)
+- `content` (String 1–500 chars, Not Null)
+- `category` (Enum: `academics`, `suggestions`, `appreciation`, `campus_life`, `other`)
+- `likes_count` (Integer, Default 0)
+- `is_approved` (Boolean, Default True)
+- `is_reported` (Boolean, Default False)
+- `created_at` (Timestamp with timezone)
 
-```powershell
-# Health check
-Invoke-RestMethod -Uri "http://localhost:8000/api/health"
-
-# Create a thought
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts" -Method POST `
-  -ContentType "application/json" `
-  -Body '{"content":"This campus library is amazing!","category":"Appreciation"}'
-
-# Get all thoughts
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts"
-
-# Filter by category
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts?category=Appreciation"
-
-# Like a thought (replace 1 with actual ID)
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts/1/like" -Method POST
-
-# Report a thought
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts/1/report" -Method POST `
-  -ContentType "application/json" `
-  -Body '{"reason":"Inappropriate content"}'
-
-# Moderator: get all thoughts (replace secret)
-Invoke-RestMethod -Uri "http://localhost:8000/api/mod/thoughts" `
-  -Headers @{"X-Moderator-Secret"="change-me-in-production"}
-
-# Moderator: hide a post
-Invoke-RestMethod -Uri "http://localhost:8000/api/mod/thoughts/1/hide" -Method POST `
-  -Headers @{"X-Moderator-Secret"="change-me-in-production"}
-```
-
-### Using curl (Git Bash or WSL)
-
-```bash
-# Health check
-curl http://localhost:8000/api/health
-
-# Create a thought
-curl -X POST http://localhost:8000/api/thoughts \
-  -H "Content-Type: application/json" \
-  -d '{"content":"Great campus event today!","category":"Campus Life"}'
-
-# Get all thoughts
-curl http://localhost:8000/api/thoughts
-
-# Like thought ID 1
-curl -X POST http://localhost:8000/api/thoughts/1/like
-
-# Moderator: list reports
-curl http://localhost:8000/api/mod/reports \
-  -H "X-Moderator-Secret: change-me-in-production"
-```
-
-### Running Backend Unit Tests
-
-```powershell
-cd backend
-pip install -r requirements.txt
-$env:DATABASE_URL="sqlite://"
-$env:MODERATOR_SECRET="test-secret"
-python -m pytest tests/ -v
-```
+### 2. `reports` Table
+- `id` (Integer, Primary Key)
+- `thought_id` (Foreign Key -> `thoughts.id`, On Delete Cascade)
+- `reason` (String 0–200 chars, Optional)
+- `created_at` (Timestamp with timezone)
 
 ---
 
-## 🐋 Important Docker Commands
+## 🎓 Master Viva Questions & Answers (Cheat Sheet)
 
-```powershell
-# Build and start
-docker compose up -d --build
+### Category A: Architecture & Project Fundamentals
 
-# Check container status
-docker compose ps
+**Q1: What is ThoughtBox and what problem does it solve?**
+> **A:** ThoughtBox is an anonymous campus thoughts and feedback platform. It allows students and faculty to share suggestions, academic feedback, and appreciation without fear of judgment. It includes automated abuse reporting and a protected moderation dashboard.
 
-# View logs (all services)
-docker compose logs -f
-
-# Restart a specific service
-docker compose restart backend
-
-# Stop all containers
-docker compose down
-
-# Stop and remove everything including volumes
-docker compose down -v
-
-# Rebuild a single service
-docker compose build backend
-docker compose up -d backend
-
-# Enter a running container
-docker compose exec backend bash
-docker compose exec db psql -U thoughtbox
-
-# List images
-docker images | findstr thoughtbox
-
-# List volumes
-docker volume ls | findstr pgdata
-```
+**Q2: What is the 3-tier architecture used in this project?**
+> **A:**
+> 1. **Presentation Tier:** React 19 SPA served via Nginx on port 3000.
+> 2. **Application Tier:** FastAPI backend on port 8000 handling business logic, validation, and rate limiting.
+> 3. **Data Tier:** PostgreSQL 16 database storing thoughts and reports with named volume persistence.
 
 ---
 
-## 💾 Verify PostgreSQL Persistence
+### Category B: Docker & Containerization
 
-Prove that data survives container recreation:
+**Q3: What is the fundamental difference between Docker and a Virtual Machine?**
+> **A:** A VM virtualizes the entire hardware stack and runs a full guest operating system using a Hypervisor. Docker virtualizes the operating system kernel using Linux **namespaces** (for isolation) and **cgroups** (for resource limitation). Containers are much faster, lighter, and share the host kernel.
 
-```powershell
-# 1. Create a thought
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts" -Method POST `
-  -ContentType "application/json" `
-  -Body '{"content":"This thought will survive restart!","category":"Other"}'
+**Q4: Explain what a Multi-Stage Docker build is and where you used it.**
+> **A:** In `frontend/Dockerfile`, we used two stages:
+> 1. `FROM node:20-alpine AS build`: Installs devDependencies and compiles TypeScript into static HTML/JS/CSS assets.
+> 2. `FROM nginx:alpine`: Copies only the compiled `/dist` directory from the build stage into an Alpine Nginx image.
+> This drops the final image size from ~1.2 GB to ~25 MB and removes the Node runtime from production, drastically reducing the security attack surface.
 
-# 2. Verify it exists
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts"
+**Q5: Why do we copy `requirements.txt` or `package.json` before copying the rest of the application code?**
+> **A:** To maximize Docker **layer caching**. Installing dependencies takes time. Since dependencies change far less frequently than application code, copying dependency manifests first ensures Docker can reuse the cached layer for dependencies whenever you modify code.
 
-# 3. Stop and recreate containers (NOT volumes)
-docker compose down
-docker compose up -d
+**Q6: What is the purpose of Docker Compose?**
+> **A:** Docker Compose is a tool for defining and running multi-container Docker applications. Through `compose.yaml`, we define services, networks, volumes, port bindings, environment variables, and startup sequences in a single declarative file.
 
-# 4. Wait for health checks, then verify data is still there
-Start-Sleep -Seconds 15
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts"
-# ✅ The thought should still appear!
+**Q7: How do containers communicate with each other?**
+> **A:** Docker Compose automatically creates an isolated internal bridge network. Each service is assigned a DNS entry matching its service name. For example, the backend connects to the database using hostname `db:5432`, resolved internally by Docker's DNS.
 
-# 5. To verify destruction, use -v flag
-docker compose down -v
-docker compose up -d --build
-Start-Sleep -Seconds 15
-Invoke-RestMethod -Uri "http://localhost:8000/api/thoughts"
-# ✅ Now the database is empty (volume was removed)
-```
+**Q8: Why doesn't the React frontend call `http://backend:8000`?**
+> **A:** The React application runs inside the **user's web browser**, not inside the Docker container! The browser runs on the host machine and does not belong to Docker's internal bridge network. Therefore, the browser must reach the backend through the published host port (`http://localhost:8000`).
 
----
+**Q9: What is the difference between `docker compose down` and `docker compose down -v`?**
+> **A:** `docker compose down` stops and removes the containers and networks, but **preserves** named volumes (`pgdata`), ensuring data survives. Adding the `-v` flag deletes all attached volumes, resetting the database to zero.
 
-## 🔄 GitHub Actions CI/CD
-
-The CI pipeline (`.github/workflows/ci.yml`) runs automatically on every push and pull request to `main`.
-
-### What it does:
-
-| Job             | Steps                                                |
-|-----------------|------------------------------------------------------|
-| Backend Tests   | Install Python → Install deps → Run pytest (SQLite)  |
-| Frontend Build  | Install Node → npm ci → npm run build                |
-
-### How it works:
-1. Push code to GitHub
-2. GitHub Actions automatically triggers the workflow
-3. Backend tests run against an in-memory SQLite database
-4. Frontend build is verified
-5. If any step fails, the workflow fails and you get notified
-
-### How to see it:
-1. Go to your GitHub repository
-2. Click the **"Actions"** tab
-3. View workflow runs and their status
-
-### Optional Jenkins Pipeline:
-A `Jenkinsfile` is included for educational purposes. It defines:
-- Checkout → Backend Tests → Frontend Build → Docker Build
-- Requires a configured Jenkins server to run
+**Q10: Why are Docker Healthchecks critical in multi-container setups?**
+> **A:** Traditional `depends_on` only checks if the container process has spawned, not if the application is ready to accept traffic. PostgreSQL takes a few seconds to initialize. By defining `pg_isready` in PostgreSQL's health check and setting `condition: service_healthy` on the backend, we prevent backend connection crashes.
 
 ---
 
-## 🔒 Anonymity & Safety
+### Category C: DevOps, CI/CD & Testing
 
-### What ThoughtBox does:
-- ✅ Posts are displayed **without any author identity**
-- ✅ No names, emails, or student IDs are collected for posting
-- ✅ The moderator secret is **never exposed in frontend code**
-- ✅ Rate limiting helps prevent spam abuse
-- ✅ No raw IP addresses are stored in the database
+**Q11: What is Continuous Integration (CI)?**
+> **A:** CI is a software engineering practice where code changes are regularly integrated into a central repository, followed by automated builds and test executions to detect regressions immediately.
 
-### Important disclaimer:
-> **Public anonymity does not guarantee absolute anonymity.** Hosting infrastructure, web servers, network devices, and cloud providers may process and log IP addresses, request metadata, and other technical information as part of normal operations. ThoughtBox provides **social anonymity** (other users cannot see who posted), not **technical anonymity** (immune to all forms of identification).
+**Q12: Describe your GitHub Actions workflow.**
+> **A:** The workflow `.github/workflows/ci.yml` triggers on pushes and PRs to `main`. It executes two parallel jobs:
+> 1. **Backend Tests:** Spawns an Ubuntu runner, installs Python 3.11, and runs `pytest` against an in-memory SQLite database.
+> 2. **Frontend Build:** Spawns an Ubuntu runner, installs Node 20, and runs `npm run build` to verify type checking and bundling.
 
----
+**Q13: Why did you use SQLite for CI tests instead of PostgreSQL?**
+> **A:** SQLite runs in-memory (`sqlite://`). It requires zero network setup, no container spin-up overhead, and completes tests in milliseconds while testing identical SQLAlchemy ORM models.
 
-## 📈 Limitations & Future Enhancements
+**Q14: What is the purpose of the `Jenkinsfile`?**
+> **A:** It provides a Declarative Pipeline for enterprise CI systems using Jenkins. It defines stages for Checkout, Backend Tests, Frontend Build, and Docker Build, followed by post-execution status reporting.
 
-### Current Limitations
-- No user authentication system
-- In-memory rate limiting resets on server restart
-- Like duplicate prevention is session-based (client-side), not IP-based
-- No real-time updates (manual refresh needed)
-- Moderation uses a shared secret, not individual admin accounts
-
-### Potential Future Enhancements
-- WebSocket-based real-time feed updates
-- Optional anonymous user sessions for better duplicate prevention
-- Full-text search across thoughts
-- Sentiment analysis or word cloud visualization
-- Multiple moderator accounts with audit logging
-- Email notifications for reports
-- Kubernetes deployment configuration
-- Prometheus/Grafana monitoring
+**Q15: What is Infrastructure as Code (IaC)?**
+> **A:** IaC is managing and provisioning computing infrastructure through machine-readable definition files rather than physical hardware configuration or interactive configuration tools. Our `compose.yaml` and `Dockerfile` are examples of IaC.
 
 ---
 
-## 📸 Screenshots
+### Category D: Backend, Database & Security
 
-See [`docs/screenshots/README.md`](docs/screenshots/README.md) for instructions on capturing screenshots of:
+**Q16: Why choose FastAPI over Django or Flask?**
+> **A:**
+> - **FastAPI:** High performance (Starlette/Uvicorn), automatic OpenAPI/Swagger documentation, native asynchronous support (`async`/`await`), and strict schema validation with Pydantic.
+> - **Flask:** Synchronous by default, requires manual setup for validation and API documentation.
+> - **Django:** Monolithic and heavy for building lightweight microservices.
 
-1. Thought Feed
-2. Create Thought Modal
-3. Category Filtering
-4. Like & Report Actions
-5. Moderator Login
-6. Moderation Panel
-7. Mobile Responsive View
-8. Docker Desktop Containers
-9. FastAPI Swagger Docs
-10. Health Check Response
+**Q17: What is an ORM and why use SQLAlchemy?**
+> **A:** An Object Relational Mapper maps database tables to Python classes. It enables querying and manipulating data using object-oriented code, prevents SQL injection attacks through parameterized queries, and provides database independence.
 
----
+**Q18: How is rate limiting implemented and why is it needed?**
+> **A:** We use `slowapi` to enforce limits (e.g., maximum 5 thought submissions per minute per IP). This prevents spam, automated bot floods, and Denial of Service (DoS) attacks while keeping client IPs in memory rather than permanently saving them.
 
-## 📝 Viva Questions & Answers
-
-### Frontend
-
-**Q: Why did you choose React with TypeScript?**
-A: React provides a component-based architecture for building reusable UI elements. TypeScript adds type safety, catching errors at compile time and improving code maintainability. Together, they are industry-standard for modern web applications.
-
-**Q: What is Vite and why use it over Create React App?**
-A: Vite is a modern build tool that uses native ES modules for near-instant dev server startup and fast Hot Module Replacement (HMR). It's significantly faster than CRA's Webpack-based setup, especially for development.
-
-**Q: How does the frontend communicate with the backend?**
-A: The frontend uses the browser's `fetch` API to make HTTP requests to the FastAPI backend's REST endpoints. The API base URL is configured via the `VITE_API_URL` environment variable at build time.
-
-### Backend
-
-**Q: Why FastAPI over Flask or Django?**
-A: FastAPI provides automatic request validation via Pydantic, auto-generated OpenAPI documentation (Swagger UI), native async support, and high performance. It's ideal for building REST APIs quickly with type safety.
-
-**Q: How do you handle database connections?**
-A: Using SQLAlchemy's session management with a dependency injection pattern. The `get_db` function yields a session per request and ensures it's closed after the request completes, preventing connection leaks.
-
-**Q: How is the moderator authenticated?**
-A: Moderator endpoints require an `X-Moderator-Secret` HTTP header that must match the `MODERATOR_SECRET` environment variable. This is a simple shared-secret approach suitable for a small-scale application.
-
-**Q: What is rate limiting and how is it implemented?**
-A: Rate limiting restricts how many requests a client can make in a time window. We use the `slowapi` library which tracks request counts in memory by client IP. This prevents spam without persisting IP addresses to the database.
-
-### Database
-
-**Q: Why PostgreSQL?**
-A: PostgreSQL is a robust, production-grade relational database with excellent support for data integrity, concurrent access, and complex queries. It's the most popular open-source RDBMS for production applications.
-
-**Q: How is data persisted across container restarts?**
-A: Docker Compose defines a named volume (`pgdata`) that maps to PostgreSQL's data directory. Named volumes persist independently of container lifecycle — data survives `docker compose down` but is removed with `docker compose down -v`.
-
-**Q: What is SQLAlchemy?**
-A: SQLAlchemy is a Python ORM (Object Relational Mapper) that lets us define database tables as Python classes and interact with the database using Python objects instead of raw SQL, improving code readability and safety.
-
-### Docker
-
-**Q: What is Docker and why use it?**
-A: Docker packages applications and their dependencies into lightweight containers that run consistently across any environment. It solves the "works on my machine" problem by ensuring identical behavior in development, testing, and production.
-
-**Q: Explain your Docker Compose configuration.**
-A: The `compose.yaml` defines three services: `db` (PostgreSQL with health check and named volume), `backend` (FastAPI, waits for DB health), and `frontend` (Nginx serving React build). Services communicate over Docker's internal network.
-
-**Q: What is a multi-stage Docker build?**
-A: The frontend Dockerfile uses two stages: a `build` stage (Node.js compiles the React app) and a `production` stage (Nginx serves the static files). This keeps the final image small by excluding Node.js and source code.
-
-**Q: What are Docker volumes?**
-A: Volumes provide persistent storage that exists outside the container's filesystem. Named volumes (like `pgdata`) survive container removal and recreation, making them essential for database persistence.
-
-**Q: What is a Docker health check?**
-A: A health check is a command Docker runs periodically to verify a container is working correctly. We use `pg_isready` for PostgreSQL and an HTTP request to `/api/health` for the backend. Other services use `depends_on: condition: service_healthy` to wait.
-
-### DevOps & CI/CD
-
-**Q: What is CI/CD?**
-A: Continuous Integration (CI) automatically builds and tests code on every commit. Continuous Deployment (CD) automatically deploys passing builds. Our GitHub Actions workflow implements CI by running backend tests and frontend builds on every push.
-
-**Q: What does the GitHub Actions workflow do?**
-A: On every push/PR to `main`, it: (1) sets up Python and runs backend pytest against SQLite, and (2) sets up Node.js, installs dependencies, and verifies the frontend builds successfully. If either fails, the workflow fails.
-
-**Q: What is a Jenkinsfile?**
-A: A Jenkinsfile defines a CI/CD pipeline for Jenkins, an open-source automation server. It describes stages (checkout, test, build, deploy) in a declarative or scripted syntax. Jenkins reads and executes this file automatically.
-
-**Q: How do environment variables protect secrets?**
-A: Sensitive values (database passwords, moderator secrets) are stored in `.env` files or CI/CD secrets, never in source code. `.env` is excluded via `.gitignore`. In CI, secrets are injected as environment variables by the CI platform.
+**Q19: How is the Moderator Panel secured?**
+> **A:** Requests to moderator endpoints require a custom HTTP header `X-Moderator-Secret`. The backend compares this value against the `MODERATOR_SECRET` environment variable using constant-time comparison to prevent timing attacks.
+**Q20: What is the difference between social anonymity and technical anonymity?**
+> **A:** ThoughtBox provides **social anonymity** (users, peers, and teachers cannot see who created a post). It does not claim absolute technical anonymity because low-level infrastructure (network routers, firewalls, ISPs) inherently logs packet metadata and IP addresses.
 
 ---
 
-## 📄 License
+## 👥 Contributors & Academic Context
 
-This project was built as an academic mini-project for MCA coursework. Feel free to use it as a reference.
+* **Project:** ThoughtBox (Anonymous Campus Thoughts Platform)
+* **Course:** Master of Computer Applications (MCA) / B.Tech Computer Science
+* **Domain:** Cloud Computing, Containerization, DevOps & Web Technologies
