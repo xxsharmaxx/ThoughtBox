@@ -59,7 +59,7 @@ pipeline {
                         sh 'docker compose build'
                     } else {
                         withEnv(['PATH+DOCKER=C:\\Users\\DHEERA SHARMA\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin']) {
-                            bat 'docker compose up --build'
+                            bat 'docker compose build'
                         }
                     }
                 }
