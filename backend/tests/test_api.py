@@ -239,3 +239,192 @@ class TestModeration:
         data = resp.json()
         assert len(data) == 1
         assert data[0]["reason"] == "Bad content"
+
+
+# ============================================================
+# User Authentication & Profiles
+# ============================================================
+
+class TestAuth:
+    def test_register_and_login(self):
+        # Register
+        reg_resp = client.post(
+            "/api/auth/register",
+            json={
+                "username": "student_sam",
+                "email": "sam@campus.edu",
+                "password": "password123",
+                "full_name": "Sam Student",
+            },
+        )
+        assert reg_resp.status_code == 201
+        data = reg_resp.json()
+        assert data["user"]["username"] == "student_sam"
+        assert "access_token" in data
+        token = data["access_token"]
+
+        # Profile /me
+        me_resp = client.get(
+            "/api/auth/me",
+            headers={"Authorization": f"Bearer {token}"},
+        )
+        assert me_resp.status_code == 200
+        assert me_resp.json()["username"] == "student_sam"
+
+        # Login
+        login_resp = client.post(
+            "/api/auth/login",
+            json={"username_or_email": "sam@campus.edu", "password": "password123"},
+        )
+        assert login_resp.status_code == 200
+        assert "access_token" in login_resp.json()
+
+    def test_register_duplicate(self):
+        client.post(
+            "/api/auth/register",
+            json={"username": "alice", "email": "alice@test.com", "password": "secretpass"},
+        )
+        resp = client.post(
+            "/api/auth/register",
+            json={"username": "alice", "email": "alice2@test.com", "password": "secretpass"},
+        )
+        assert resp.status_code == 400
+
+    def test_login_wrong_password(self):
+        client.post(
+            "/api/auth/register",
+            json={"username": "bob", "email": "bob@test.com", "password": "secretpass"},
+        )
+        resp = client.post(
+            "/api/auth/login",
+            json={"username_or_email": "bob", "password": "wrongpassword"},
+        )
+        assert resp.status_code == 401
+
+
+# ============================================================
+# Admin Dashboard & Management
+# ============================================================
+
+class TestAdminManagement:
+    def _create_admin_token(self):
+        reg = client.post(
+            "/api/auth/register",
+            json={"username": "site_admin", "email": "admin@campus.edu", "password": "adminpassword"},
+        )
+        token = reg.json()["access_token"]
+        # Promote to admin via moderator secret
+        user_id = reg.json()["user"]["id"]
+        client.patch(
+            f"/api/admin/users/{user_id}/role",
+            headers=MOD_HEADER,
+            json={"role": "admin"},
+        )
+        return token
+
+    def test_admin_stats(self):
+        client.post("/api/thoughts", json={"content": "Stats thought", "category": "Campus Life"})
+        resp = client.get("/api/admin/stats", headers=MOD_HEADER)
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["total_thoughts"] >= 1
+        assert "category_breakdown" in data
+
+    def test_admin_edit_and_delete_thought(self):
+        # Create thought
+        create = client.post("/api/thoughts", json={"content": "Old Content", "category": "Other"})
+        t_id = create.json()["id"]
+
+        # Edit thought
+        edit_resp = client.put(
+            f"/api/admin/thoughts/{t_id}",
+            headers=MOD_HEADER,
+            json={"content": "Updated Content by Admin", "category": "Academics"},
+        )
+        assert edit_resp.status_code == 200
+        assert edit_resp.json()["content"] == "Updated Content by Admin"
+        assert edit_resp.json()["category"] == "Academics"
+
+        # Delete thought
+        del_resp = client.delete(f"/api/admin/thoughts/{t_id}", headers=MOD_HEADER)
+        assert del_resp.status_code == 200
+
+        # Verify gone
+        feed = client.get("/api/thoughts")
+        assert not any(t["id"] == t_id for t in feed.json())
+
+
+# ============================================================
+# Polls & Voting
+# ============================================================
+
+class TestPolls:
+    def test_create_and_vote_poll(self):
+        # Create poll
+        create_resp = client.post(
+            "/api/polls",
+            json={
+                "question": "Should library hours be extended 24/7?",
+                "category": "Campus Life",
+                "options": ["Yes, definitely", "No, unnecessary", "Only during exams"],
+            },
+        )
+        assert create_resp.status_code == 201
+        poll = create_resp.json()
+        assert poll["question"] == "Should library hours be extended 24/7?"
+        assert len(poll["options"]) == 3
+        poll_id = poll["id"]
+        opt_id = poll["options"][0]["id"]
+
+        # Vote
+        vote_resp = client.post(
+            f"/api/polls/{poll_id}/vote",
+            json={"option_id": opt_id, "voter_token": "client-uuid-1234"},
+        )
+        assert vote_resp.status_code == 200
+        updated = vote_resp.json()
+        assert updated["total_votes"] == 1
+        assert updated["user_voted_option_id"] == opt_id
+        assert updated["options"][0]["votes_count"] == 1
+
+        # Prevent duplicate vote
+        dup_resp = client.post(
+            f"/api/polls/{poll_id}/vote",
+            json={"option_id": opt_id, "voter_token": "client-uuid-1234"},
+        )
+        assert dup_resp.status_code == 400
+
+    def test_admin_delete_poll(self):
+        create_resp = client.post(
+            "/api/polls",
+            json={
+                "question": "Poll to be deleted?",
+                "category": "Suggestions",
+                "options": ["Option A", "Option B"],
+            },
+        )
+        poll_id = create_resp.json()["id"]
+        del_resp = client.delete(f"/api/admin/polls/{poll_id}", headers=MOD_HEADER)
+        assert del_resp.status_code == 200
+
+
+# ============================================================
+# Comments
+# ============================================================
+
+class TestComments:
+    def test_thought_comments(self):
+        create_t = client.post("/api/thoughts", json={"content": "Thought for discussion", "category": "Academics"})
+        t_id = create_t.json()["id"]
+
+        comment_resp = client.post(
+            f"/api/thoughts/{t_id}/comments",
+            json={"content": "Great thought! I totally agree.", "author_name": "Fellow Student"},
+        )
+        assert comment_resp.status_code == 201
+        assert comment_resp.json()["content"] == "Great thought! I totally agree."
+
+        # Fetch comments
+        get_comments = client.get(f"/api/thoughts/{t_id}/comments")
+        assert get_comments.status_code == 200
+        assert len(get_comments.json()) == 1

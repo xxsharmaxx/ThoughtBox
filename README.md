@@ -27,12 +27,13 @@
 On college campuses, students often hesitate to share candid feedback, creative suggestions, or genuine appreciation due to social anxiety, peer pressure, or fear of academic retribution. Traditional feedback boxes are slow, unmoderated, and lack peer engagement.
 
 ### 2. Our Solution: ThoughtBox
-ThoughtBox provides a secure, anonymous, real-time campus forum where:
-- **Students & Teachers post thoughts anonymously**: No login, no names, no student IDs, and no raw IP logging.
-- **Categorization**: Thoughts are categorized under *Academics, Suggestions, Appreciation, Campus Life,* or *Other*.
-- **Community Interaction**: Users can like thoughts (with client-side duplicate prevention) and view real-time vote tallies.
-- **Content Moderation & Safety**: Users can flag/report inappropriate content.
-- **Protected Moderator Panel**: Campus moderators log in via a secure secret key to review reported posts, approve/hide thoughts, or delete offensive submissions.
+ThoughtBox provides a secure, interactive campus community and feedback forum featuring:
+- **Authentication & User Account System**: Students can register and sign in with campus accounts, choose personalized avatars, or post completely anonymously with one-click privacy.
+- **Interactive Campus Polls**: Students and administrators can launch community polls (with 2–6 choices) and participate in live voting with percentage progress visualizations.
+- **Full-Featured Admin & Moderation Hub**: Administrators can edit thought content & categories, permanently delete posts, manage polls (close/reopen/delete), inspect flagged reports, and manage user accounts & roles (`user` vs `admin`).
+- **Discussion & Comments**: Community members can engage in threaded discussions under thoughts.
+- **Categorization**: Filter thoughts and polls under *Academics, Suggestions, Appreciation, Campus Life,* or *Other*.
+- **Safety & Rate Limiting**: Built-in SlowAPI rate limiting, content moderation flags, and PBKDF2 cryptographic password hashing.
 
 ---
 

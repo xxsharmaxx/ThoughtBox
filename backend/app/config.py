@@ -16,6 +16,12 @@ class Settings(BaseSettings):
     # Moderator secret - MUST be set via environment variable in production
     moderator_secret: str = "change-me-in-production"
 
+    # Auth & Admin config
+    jwt_secret: str = "thoughtbox-super-secret-jwt-key-2026"
+    admin_default_username: str = "admin"
+    admin_default_password: str = "admin123"
+    admin_default_email: str = "admin@thoughtbox.campus"
+
     # Rate limiting
     rate_limit_per_minute: int = 30
 

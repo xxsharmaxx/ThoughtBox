@@ -10,7 +10,11 @@ settings = get_settings()
 connect_args = {}
 engine_kwargs = {"pool_pre_ping": True}
 
-if settings.database_url.startswith("sqlite"):
+db_url = settings.database_url
+if db_url.startswith("postgresql://"):
+    db_url = db_url.replace("postgresql://", "postgresql+psycopg2://", 1)
+
+if db_url.startswith("sqlite"):
     connect_args["check_same_thread"] = False
 else:
     # PostgreSQL-specific pool settings
@@ -18,7 +22,7 @@ else:
     engine_kwargs["max_overflow"] = 10
 
 engine = create_engine(
-    settings.database_url,
+    db_url,
     connect_args=connect_args,
     **engine_kwargs,
 )
