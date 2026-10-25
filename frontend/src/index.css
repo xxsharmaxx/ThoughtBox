@@ -2003,20 +2003,36 @@ body {
    ============================================================ */
 
 .auth-modal-overlay {
-  background: rgba(15, 23, 42, 0.78) !important;
+  position: fixed !important;
+  inset: 0 !important;
+  background: rgba(15, 23, 42, 0.8) !important;
   backdrop-filter: blur(10px) !important;
   -webkit-backdrop-filter: blur(10px) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  padding: 24px 16px !important;
+  box-sizing: border-box !important;
+  z-index: 1000 !important;
+  -webkit-overflow-scrolling: touch !important;
 }
 
 .auth-modal-card {
-  max-width: 480px;
-  width: 95%;
+  max-width: 520px !important;
+  width: 100% !important;
+  max-height: calc(100vh - 48px) !important;
+  display: flex !important;
+  flex-direction: column !important;
   padding: 0 !important;
   background: #ffffff !important;
   border-radius: 20px !important;
   border: 2px solid #3b82f6 !important;
   box-shadow: 0 25px 65px -10px rgba(15, 23, 42, 0.45), 0 12px 30px -5px rgba(37, 99, 235, 0.25) !important;
   overflow: hidden !important;
+  margin: auto !important;
+  position: relative !important;
 }
 
 [data-theme="dark"] .auth-modal-card {
@@ -2025,10 +2041,14 @@ body {
   box-shadow: 0 25px 65px -10px rgba(0, 0, 0, 0.8), 0 0 35px rgba(59, 130, 246, 0.3) !important;
 }
 
-/* Vibrant Colored Header */
+/* Vibrant Colored Header (Sticky at top of modal) */
 .auth-modal-header {
+  flex-shrink: 0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 30 !important;
   background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #4f46e5 100%) !important;
-  padding: 22px 24px !important;
+  padding: 20px 24px !important;
   color: #ffffff !important;
   display: flex !important;
   align-items: flex-start !important;
@@ -2097,14 +2117,239 @@ body {
   transform: scale(1.08);
 }
 
-/* Modal Inner Body with 100% Solid Non-Blended Background */
+/* Modal Inner Body with Smooth Scroll / Roll Down */
 .auth-modal-body {
-  padding: 24px 28px 28px !important;
+  flex: 1 1 auto !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  scroll-behavior: smooth !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  padding: 20px 24px 28px !important;
   background: #ffffff !important;
 }
 
 [data-theme="dark"] .auth-modal-body {
   background: #0f172a !important;
+}
+
+/* Visible Custom Scrollbar for Smooth Rolling Down */
+.auth-modal-body::-webkit-scrollbar {
+  width: 9px !important;
+}
+
+.auth-modal-body::-webkit-scrollbar-track {
+  background: #f1f5f9 !important;
+  border-radius: 10px !important;
+  margin: 6px 0 !important;
+}
+
+[data-theme="dark"] .auth-modal-body::-webkit-scrollbar-track {
+  background: #1e293b !important;
+}
+
+.auth-modal-body::-webkit-scrollbar-thumb {
+  background: #3b82f6 !important;
+  border-radius: 10px !important;
+  border: 2px solid #ffffff !important;
+}
+
+[data-theme="dark"] .auth-modal-body::-webkit-scrollbar-thumb {
+  background: #60a5fa !important;
+  border-color: #0f172a !important;
+}
+
+.auth-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #1d4ed8 !important;
+}
+
+/* Quick Roll-Down Banner & Action Button */
+.auth-roll-down-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 1.5px solid #93c5fd;
+  padding: 8px 12px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+
+[data-theme="dark"] .auth-roll-down-banner {
+  background: linear-gradient(135deg, rgba(30, 58, 138, 0.4) 0%, rgba(67, 56, 202, 0.3) 100%);
+  border-color: #3b82f6;
+}
+
+.roll-down-banner-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #1e40af;
+}
+
+[data-theme="dark"] .roll-down-banner-text {
+  color: #bfdbfe;
+}
+
+.roll-down-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+  transition: all var(--transition);
+}
+
+.roll-down-action-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.45);
+}
+
+.roll-down-icon-bounce {
+  display: inline-block;
+  animation: bounceDown 1.4s infinite;
+}
+
+@keyframes bounceDown {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(3px); }
+}
+
+/* Roll-Down Accordion for Optional Fields */
+.roll-down-accordion-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: #f8fafc;
+  border: 1.5px dashed #cbd5e1;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  margin-bottom: 14px;
+  transition: all var(--transition);
+  text-align: left;
+}
+
+[data-theme="dark"] .roll-down-accordion-toggle {
+  background: #1e293b;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.roll-down-accordion-toggle:hover {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+[data-theme="dark"] .roll-down-accordion-toggle:hover {
+  border-color: #60a5fa;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.roll-down-accordion-toggle.expanded {
+  border-style: solid;
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+[data-theme="dark"] .roll-down-accordion-toggle.expanded {
+  background: rgba(37, 99, 235, 0.2);
+  border-color: #3b82f6;
+}
+
+.roll-down-content-section {
+  animation: fadeIn 0.2s ease-in-out;
+}
+
+/* Roll-Down Select Dropdown */
+.auth-styled-select {
+  width: 100%;
+  padding: 10px 12px;
+  background: #f8fafc;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all var(--transition);
+}
+
+[data-theme="dark"] .auth-styled-select {
+  background: #1e293b;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+.auth-styled-select:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+[data-theme="dark"] .auth-styled-select:focus {
+  background: #0f172a;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.35);
+}
+
+/* Roll Up to Top Button */
+.auth-actions-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.roll-up-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 13px 16px;
+  background: #f1f5f9;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 12px;
+  color: #1e293b;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition);
+}
+
+[data-theme="dark"] .roll-up-action-btn {
+  background: #1e293b;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.roll-up-action-btn:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+[data-theme="dark"] .roll-up-action-btn:hover {
+  background: #334155;
+  border-color: #64748b;
 }
 
 .auth-tabs {

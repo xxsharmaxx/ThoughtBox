@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { registerUser, loginUser, type User } from '../api';
 import { useToast } from './Toast';
 
@@ -25,6 +25,7 @@ export default function AuthModal({
   onSuccess,
 }: AuthModalProps) {
   const { showToast } = useToast();
+  const modalBodyRef = useRef<HTMLDivElement>(null);
   const [mode, setMode] = useState<'login' | 'register'>(initialMode);
   const [loading, setLoading] = useState(false);
 
@@ -40,6 +41,7 @@ export default function AuthModal({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isRollingAvatar, setIsRollingAvatar] = useState(false);
+  const [showRollDownOptions, setShowRollDownOptions] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   if (!isOpen) return null;
@@ -54,6 +56,28 @@ export default function AuthModal({
       setIsRollingAvatar(false);
       showToast(`Rolled avatar: ${randomPick.label}! 🎲`, 'info');
     }, 200);
+  };
+
+  // Smooth Roll-Down to bottom (submit & password)
+  const handleRollDown = () => {
+    if (modalBodyRef.current) {
+      modalBodyRef.current.scrollTo({
+        top: modalBodyRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+      showToast('Rolled down to submit & password ⬇️', 'info');
+    }
+  };
+
+  // Smooth Roll-Up to top of form
+  const handleRollUp = () => {
+    if (modalBodyRef.current) {
+      modalBodyRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+      showToast('Rolled up to top ⬆️', 'info');
+    }
   };
 
   // Password strength calculation
@@ -129,7 +153,7 @@ export default function AuthModal({
   return (
     <div className="modal-overlay auth-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
       <div className="modal-card auth-modal-card" onClick={(e) => e.stopPropagation()}>
-        {/* Vibrant Colored Header */}
+        {/* Vibrant Colored Header (Sticky) */}
         <div className="auth-modal-header">
           <div className="auth-brand-badge">
             <span className="auth-brand-icon">✨</span>
@@ -152,8 +176,8 @@ export default function AuthModal({
           </button>
         </div>
 
-        {/* Modal Inner Body with Solid High-Contrast Background */}
-        <div className="auth-modal-body">
+        {/* Modal Inner Body with Smooth Scroll / Roll Down */}
+        <div className="auth-modal-body" ref={modalBodyRef}>
           {/* Mode Switcher Tabs */}
           <div className="auth-tabs">
             <button
@@ -177,6 +201,24 @@ export default function AuthModal({
               Create Account
             </button>
           </div>
+
+          {/* Quick Roll Down Action Bar (Create Account) */}
+          {mode === 'register' && (
+            <div className="auth-roll-down-banner">
+              <div className="roll-down-banner-text">
+                <span className="roll-down-icon-bounce">📜</span>
+                <span>Need to jump to submit? Roll down anytime:</span>
+              </div>
+              <button
+                type="button"
+                className="roll-down-action-btn"
+                onClick={handleRollDown}
+                title="Smoothly roll down to password & submit button"
+              >
+                <span>Roll Down ⬇️</span>
+              </button>
+            </div>
+          )}
 
           {/* Demo Helper Pill */}
           <div className="demo-credentials-banner">
@@ -203,15 +245,30 @@ export default function AuthModal({
           <form onSubmit={handleSubmit} className="auth-form">
             {mode === 'register' && (
               <>
-                {/* ROLE SELECTION FUNCTION */}
+                {/* ROLE SELECTION FUNCTION (WITH ROLL DOWN / DROPDOWN SELECT) */}
                 <div className="auth-field-card">
                   <div className="auth-field-header">
-                    <label className="auth-field-label">
+                    <label className="auth-field-label" htmlFor="auth-role-select">
                       <span className="auth-label-title">Select Campus Role</span>
                       <span className="req">*</span>
                     </label>
                     <span className="auth-field-tag">Role Function</span>
                   </div>
+
+                  {/* Accessible Roll-Down Dropdown Menu */}
+                  <div className="auth-role-dropdown-box" style={{ marginBottom: '8px' }}>
+                    <select
+                      id="auth-role-select"
+                      className="auth-styled-select"
+                      value={selectedRole}
+                      onChange={(e) => setSelectedRole(e.target.value as 'user' | 'admin')}
+                    >
+                      <option value="user">🎓 Student / Campus Member (Share, Vote, Discuss)</option>
+                      <option value="admin">👑 Administrator (Full Control: Edit, Delete, Polls)</option>
+                    </select>
+                  </div>
+
+                  {/* Interactive Visual Cards */}
                   <div className="role-selector-grid">
                     <button
                       type="button"
@@ -239,92 +296,115 @@ export default function AuthModal({
                   </div>
                 </div>
 
-                {/* CAMPUS ROLL NUMBER / STUDENT ID (ROLL FUNCTION) */}
-                <div className="auth-field-card">
-                  <div className="auth-field-header">
-                    <label className="auth-field-label" htmlFor="auth-roll-no">
-                      <span className="auth-label-title">Campus Roll No. / Student ID</span>
-                      <span className="optional-tag">optional</span>
-                    </label>
-                    <span className="auth-field-tag">Roll Function</span>
-                  </div>
-                  <div className="auth-styled-input-box">
-                    <div className="auth-input-icon-pill icon-roll" title="Roll Number">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="2" y="4" width="20" height="16" rx="2" />
-                        <line x1="6" y1="8" x2="10" y2="8" />
-                        <line x1="6" y1="12" x2="14" y2="12" />
-                        <line x1="6" y1="16" x2="11" y2="16" />
-                      </svg>
-                    </div>
-                    <input
-                      id="auth-roll-no"
-                      type="text"
-                      className="auth-styled-input"
-                      placeholder="e.g. 2024CS101 or STU-8821"
-                      value={rollNumber}
-                      onChange={(e) => setRollNumber(e.target.value)}
-                      maxLength={50}
-                    />
-                  </div>
-                </div>
+                {/* ROLL-DOWN ACCORDION FOR CAMPUS ROLL NUMBER & PROFILE DETAILS */}
+                <button
+                  type="button"
+                  className={`roll-down-accordion-toggle ${showRollDownOptions ? 'expanded' : ''}`}
+                  onClick={() => setShowRollDownOptions(!showRollDownOptions)}
+                >
+                  <span className="accordion-title-box">
+                    <span>🎓 Campus Roll No. & Profile Options</span>
+                    <span className="optional-tag" style={{ marginLeft: '8px' }}>
+                      {showRollDownOptions ? 'Open' : 'Roll down'}
+                    </span>
+                  </span>
+                  <span className="accordion-action-hint">
+                    <span style={{ fontSize: '0.78rem', color: '#2563eb' }}>
+                      {showRollDownOptions ? 'Roll Up ▲' : 'Roll Down ▼'}
+                    </span>
+                  </span>
+                </button>
 
-                {/* FULL NAME (OPTIONAL) */}
-                <div className="auth-field-card">
-                  <div className="auth-field-header">
-                    <label className="auth-field-label" htmlFor="auth-full-name">
-                      <span className="auth-label-title">Full Name</span>
-                      <span className="optional-tag">optional</span>
-                    </label>
-                  </div>
-                  <div className="auth-styled-input-box">
-                    <div className="auth-input-icon-pill icon-name" title="Full Name">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
+                {showRollDownOptions && (
+                  <div className="roll-down-content-section">
+                    {/* CAMPUS ROLL NUMBER / STUDENT ID (ROLL FUNCTION) */}
+                    <div className="auth-field-card">
+                      <div className="auth-field-header">
+                        <label className="auth-field-label" htmlFor="auth-roll-no">
+                          <span className="auth-label-title">Campus Roll No. / Student ID</span>
+                          <span className="optional-tag">optional</span>
+                        </label>
+                        <span className="auth-field-tag">Roll Function</span>
+                      </div>
+                      <div className="auth-styled-input-box">
+                        <div className="auth-input-icon-pill icon-roll" title="Roll Number">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <rect x="2" y="4" width="20" height="16" rx="2" />
+                            <line x1="6" y1="8" x2="10" y2="8" />
+                            <line x1="6" y1="12" x2="14" y2="12" />
+                            <line x1="6" y1="16" x2="11" y2="16" />
+                          </svg>
+                        </div>
+                        <input
+                          id="auth-roll-no"
+                          type="text"
+                          className="auth-styled-input"
+                          placeholder="e.g. 2024CS101 or STU-8821"
+                          value={rollNumber}
+                          onChange={(e) => setRollNumber(e.target.value)}
+                          maxLength={50}
+                        />
+                      </div>
                     </div>
-                    <input
-                      id="auth-full-name"
-                      type="text"
-                      className="auth-styled-input"
-                      placeholder="e.g. Alex Rivera"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      maxLength={100}
-                    />
-                  </div>
-                </div>
 
-                {/* AVATAR SELECTOR WITH ROLL/RANDOMIZE FUNCTION */}
-                <div className="auth-field-card">
-                  <div className="auth-field-header">
-                    <label className="auth-field-label">
-                      <span className="auth-label-title">Select Avatar</span>
-                    </label>
-                    <button
-                      type="button"
-                      className={`roll-avatar-btn ${isRollingAvatar ? 'rolling' : ''}`}
-                      onClick={handleRollAvatar}
-                      title="Roll for a random avatar!"
-                    >
-                      <span>🎲 Roll Avatar</span>
-                    </button>
+                    {/* FULL NAME (OPTIONAL) */}
+                    <div className="auth-field-card">
+                      <div className="auth-field-header">
+                        <label className="auth-field-label" htmlFor="auth-full-name">
+                          <span className="auth-label-title">Full Name</span>
+                          <span className="optional-tag">optional</span>
+                        </label>
+                      </div>
+                      <div className="auth-styled-input-box">
+                        <div className="auth-input-icon-pill icon-name" title="Full Name">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        </div>
+                        <input
+                          id="auth-full-name"
+                          type="text"
+                          className="auth-styled-input"
+                          placeholder="e.g. Alex Rivera"
+                          value={fullName}
+                          onChange={(e) => setFullName(e.target.value)}
+                          maxLength={100}
+                        />
+                      </div>
+                    </div>
+
+                    {/* AVATAR SELECTOR WITH ROLL/RANDOMIZE FUNCTION */}
+                    <div className="auth-field-card">
+                      <div className="auth-field-header">
+                        <label className="auth-field-label">
+                          <span className="auth-label-title">Select Avatar</span>
+                        </label>
+                        <button
+                          type="button"
+                          className={`roll-avatar-btn ${isRollingAvatar ? 'rolling' : ''}`}
+                          onClick={handleRollAvatar}
+                          title="Roll for a random avatar!"
+                        >
+                          <span>🎲 Roll Avatar</span>
+                        </button>
+                      </div>
+                      <div className="avatar-selector-grid">
+                        {AVATARS.map((av) => (
+                          <button
+                            type="button"
+                            key={av.id}
+                            className={`avatar-option-btn ${selectedAvatar === av.id ? 'selected' : ''}`}
+                            onClick={() => setSelectedAvatar(av.id)}
+                          >
+                            <span className="avatar-opt-emoji">{av.label.split(' ')[0]}</span>
+                            <span className="avatar-opt-name">{av.label.split(' ')[1]}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div className="avatar-selector-grid">
-                    {AVATARS.map((av) => (
-                      <button
-                        type="button"
-                        key={av.id}
-                        className={`avatar-option-btn ${selectedAvatar === av.id ? 'selected' : ''}`}
-                        onClick={() => setSelectedAvatar(av.id)}
-                      >
-                        <span className="avatar-opt-emoji">{av.label.split(' ')[0]}</span>
-                        <span className="avatar-opt-name">{av.label.split(' ')[1]}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
+                )}
 
                 {/* EMAIL */}
                 <div className="auth-field-card">
@@ -523,24 +603,37 @@ export default function AuthModal({
               </div>
             )}
 
-            {/* SUBMIT BUTTON */}
+            {/* SUBMIT BUTTON & ROLL UP ACTIONS */}
             <div className="auth-actions">
-              <button
-                type="submit"
-                className="btn btn-primary btn-block auth-submit-btn"
-                disabled={loading}
-              >
-                {loading ? (
-                  <span className="btn-loading-content">
-                    <span className="spinner" />
-                    <span>Processing...</span>
-                  </span>
-                ) : mode === 'login' ? (
-                  'Sign In to ThoughtBox 🚀'
-                ) : (
-                  `Create ${selectedRole === 'admin' ? 'Admin' : 'Member'} Account 🎉`
+              <div className="auth-actions-row">
+                <button
+                  type="submit"
+                  className="btn btn-primary auth-submit-btn"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <span className="btn-loading-content">
+                      <span className="spinner" />
+                      <span>Processing...</span>
+                    </span>
+                  ) : mode === 'login' ? (
+                    'Sign In to ThoughtBox 🚀'
+                  ) : (
+                    `Create ${selectedRole === 'admin' ? 'Admin' : 'Member'} Account 🎉`
+                  )}
+                </button>
+
+                {mode === 'register' && (
+                  <button
+                    type="button"
+                    className="roll-up-action-btn"
+                    onClick={handleRollUp}
+                    title="Roll back up to top of the form"
+                  >
+                    <span>⬆️ Top</span>
+                  </button>
                 )}
-              </button>
+              </div>
             </div>
           </form>
 
